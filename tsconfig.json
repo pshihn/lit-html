@@ -4,15 +4,16 @@
     "module": "es2015",
     "lib": ["es2017", "esnext.asynciterable", "dom"],
     "declaration": true,
+    "declarationMap": true,
     "sourceMap": true,
     "inlineSources": true,
     "outDir": "./",
-    // "rootDir": "./",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts"

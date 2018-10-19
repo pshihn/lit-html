@@ -1,16 +1,21 @@
 /node_modules/
 /lib/
+/directives/
 
 /tools/node_modules/
 /tools/lib/
 
 # Compiler output
 /lit-html.d.ts
+/lit-html.d.ts.map
 /lit-html.js
 /lit-html.js.map
 /test/**/*.d.ts
+/test/**/*.d.ts.map
 /test/**/*.js
 /test/**/*.js.map
+
+/lit-html.bundled.js
 
 yarn.lock
 
@@ -29,6 +34,3 @@ pids
 
 # Optional npm cache directory
 .npm
-
-# bower_components for testing
-bower_components
