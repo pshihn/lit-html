@@ -10,12 +10,29 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
    Unreleased section, uncommenting the header as necessary.
 -->
 
-## Unreleased
+<!-- ## Unreleased -->
+<!-- ### Changed -->
 <!-- ### Added -->
-### Changed
-* Directive are now defined by passing the entire directive factory function to `directive()`.
 <!-- ### Removed -->
 <!-- ### Fixed -->
+
+## Unreleased
+### Changed
+* `until()` can now take any number of sync or async arguments. ([#555](https://github.com/Polymer/lit-html/pull/555))
+### Added
+* Removed Promise as a supposed node-position value type. ([#555](https://github.com/Polymer/lit-html/pull/555))
+* [Breaking] Renamed `classMap.js` and `styleMap.js` files to kebab-case. ([#644](https://github.com/Polymer/lit-html/pull/644))
+* [Breaking] Removed the `when()` directive.  Users may achieve similar behavior by wrapping a ternary with the `cache()` directive.
+### Removed
+
+## [0.13.0] - 2018-11-08
+### Changed
+* [Breaking] Directives are now defined by passing the entire directive factory function to `directive()`. ([#562](https://github.com/Polymer/lit-html/pull/562))
+### Fixed
+* Fix issue on obscure browsers that do not accept event listener objects by using callback as event part listener ([#581](https://github.com/Polymer/lit-html/pull/581))
+* Fix KeyFn and ItemTemplate types ([#570](https://github.com/Polymer/lit-html/pull/570))
+* Don't use export * to workaround rollup bug ([#556](https://github.com/Polymer/lit-html/pull/556))
+* `eventContext` is no longer used as the `this` value for event listener objects (object with a `handleEvent` method), as the object itself is supposed to be the `this` value. ([#576](https://github.com/Polymer/lit-html/pull/576))
 
 ## [0.12.0] - 2018-10-05
 ### Changed
@@ -26,8 +43,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 * Event listeners are called with a configurable `this` reference, which is set via the `eventContext` option to `render()`. ([#523](https://github.com/Polymer/lit-html/pull/523))
 * Support for event listener options, by passing the listener itself as both the second and third arguments to add/removeEventListener().
 
-<!-- ### Removed -->
-<!-- ### Fixed -->
 
 ## [0.11.4] - 2018-09-17
 ### Fixed

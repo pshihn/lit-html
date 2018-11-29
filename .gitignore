@@ -1,6 +1,7 @@
 /node_modules/
 /lib/
 /directives/
+/polyfills/
 
 /tools/node_modules/
 /tools/lib/
@@ -34,3 +35,7 @@ pids
 
 # Optional npm cache directory
 .npm
+
+# Docs
+/docs/_site/
+*.pyc

@@ -18,16 +18,9 @@ import {parts, render as litRender} from './render.js';
 import {templateCaches} from './template-factory.js';
 import {TemplateInstance} from './template-instance.js';
 import {TemplateResult} from './template-result.js';
-import {Template} from './template.js';
+import {marker, Template} from './template.js';
 
 export {html, svg, TemplateResult} from '../lit-html.js';
-
-declare global {
-  interface Window {
-    ShadyCSS: any;
-  }
-  class ShadowRoot {}
-}
 
 // Get a key to lookup in `templateCaches`.
 const getTemplateCacheKey = (type: string, scopeName: string) =>
@@ -54,21 +47,31 @@ const shadyTemplateFactory = (scopeName: string) =>
       const cacheKey = getTemplateCacheKey(result.type, scopeName);
       let templateCache = templateCaches.get(cacheKey);
       if (templateCache === undefined) {
-        templateCache = new Map<TemplateStringsArray, Template>();
+        templateCache = {
+          stringsArray: new WeakMap<TemplateStringsArray, Template>(),
+          keyString: new Map<string, Template>()
+        };
         templateCaches.set(cacheKey, templateCache);
       }
-      let template = templateCache.get(result.strings);
+
+      let template = templateCache.stringsArray.get(result.strings);
+      if (template !== undefined) {
+        return template;
+      }
+
+      const key = result.strings.join(marker);
+      template = templateCache.keyString.get(key);
       if (template === undefined) {
         const element = result.getTemplateElement();
         if (compatibleShadyCSSVersion) {
-          window.ShadyCSS.prepareTemplateDom(element, scopeName);
+          window.ShadyCSS!.prepareTemplateDom(element, scopeName);
         }
         template = new Template(result, element);
-        templateCache.set(result.strings, template);
+        templateCache.keyString.set(key, template);
       }
+      templateCache.stringsArray.set(result.strings, template);
       return template;
     };
-
 
 const TEMPLATE_TYPES = ['html', 'svg'];
 
@@ -79,7 +82,7 @@ const removeStylesFromLitTemplates = (scopeName: string) => {
   TEMPLATE_TYPES.forEach((type) => {
     const templates = templateCaches.get(getTemplateCacheKey(type, scopeName));
     if (templates !== undefined) {
-      templates.forEach((template) => {
+      templates.keyString.forEach((template) => {
         const {element: {content}} = template;
         // IE 11 doesn't support the iterable param Set constructor
         const styles = new Set<Element>();
@@ -137,8 +140,8 @@ const prepareTemplateStyles =
       // Note, it's important that ShadyCSS gets the template that `lit-html`
       // will actually render so that it can update the style inside when
       // needed (e.g. @apply native Shadow DOM case).
-      window.ShadyCSS.prepareTemplateStyles(template.element, scopeName);
-      if (window.ShadyCSS.nativeShadow) {
+      window.ShadyCSS!.prepareTemplateStyles(template.element, scopeName);
+      if (window.ShadyCSS!.nativeShadow) {
         // When in native Shadow DOM, re-add styling to rendered content using
         // the style ShadyCSS produced.
         const style = template.element.content.querySelector('style')!;
@@ -168,10 +171,11 @@ export const render =
      options: ShadyRenderOptions) => {
       const scopeName = options.scopeName;
       const hasRendered = parts.has(container);
-      litRender(result, container, {
-        templateFactory: shadyTemplateFactory(scopeName),
-        ...options,
-      } as RenderOptions);
+      litRender(
+          result,
+          container,
+          {templateFactory: shadyTemplateFactory(scopeName), ...options} as
+              RenderOptions);
       // When rendering a TemplateResult, scope the template with ShadyCSS
       if (container instanceof ShadowRoot && compatibleShadyCSSVersion &&
           result instanceof TemplateResult) {
@@ -180,11 +184,11 @@ export const render =
           const part = parts.get(container)!;
           const instance = part.value as TemplateInstance;
           prepareTemplateStyles(
-              (container as ShadowRoot), instance.template, scopeName);
+              container as ShadowRoot, instance.template, scopeName);
         }
         // Update styling if this is the initial render to this container.
         if (!hasRendered) {
-          window.ShadyCSS.styleElement((container as ShadowRoot).host);
+          window.ShadyCSS!.styleElement((container as ShadowRoot).host);
         }
       }
     };

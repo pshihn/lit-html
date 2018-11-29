@@ -196,8 +196,6 @@ export class NodePart implements Part {
       this._commitNode(value);
     } else if (Array.isArray(value) || value[Symbol.iterator]) {
       this._commitIterable(value);
-    } else if (value.then !== undefined) {
-      this._commitPromise(value);
     } else {
       // Fallback, will render the string representation
       this._commitText(value);
@@ -299,16 +297,6 @@ export class NodePart implements Part {
     }
   }
 
-  private _commitPromise(value: Promise<any>): void {
-    this.value = value;
-    value.then((v: any) => {
-      if (this.value === value) {
-        this.setValue(v);
-        this.commit();
-      }
-    });
-  }
-
   clear(startNode: Node = this.startNode) {
     removeNodes(
         this.startNode.parentNode!, startNode.nextSibling!, this.endNode);
@@ -404,14 +392,6 @@ export class PropertyCommitter extends AttributeCommitter {
 
 export class PropertyPart extends AttributePart {}
 
-declare global {
-  interface EventListenerOptions {
-    capture?: boolean;
-    once?: boolean;
-    passive?: boolean;
-  }
-}
-
 // Detect event listener options support. If the `capture` property is read
 // from the options object, then options are supported. If not, then the thrid
 // argument to add/removeEventListener is interpreted as the boolean capture
@@ -435,13 +415,15 @@ export class EventPart implements Part {
   eventName: string;
   eventContext?: EventTarget;
   value: any = undefined;
-  _options?: {capture?: boolean, passive?: boolean, once?: boolean};
+  _options?: AddEventListenerOptions;
   _pendingValue: any = undefined;
+  _boundHandleEvent: (event: Event) => void;
 
   constructor(element: Element, eventName: string, eventContext?: EventTarget) {
     this.element = element;
     this.eventName = eventName;
     this.eventContext = eventContext;
+    this._boundHandleEvent = (e) => this.handleEvent(e);
   }
 
   setValue(value: any): void {
@@ -469,23 +451,24 @@ export class EventPart implements Part {
         newListener != null && (oldListener == null || shouldRemoveListener);
 
     if (shouldRemoveListener) {
-      this.element.removeEventListener(this.eventName, this, this._options);
+      this.element.removeEventListener(
+          this.eventName, this._boundHandleEvent, this._options);
     }
-    this._options = getOptions(newListener);
     if (shouldAddListener) {
-      this.element.addEventListener(this.eventName, this, this._options);
+      this._options = getOptions(newListener);
+      this.element.addEventListener(
+          this.eventName, this._boundHandleEvent, this._options);
     }
     this.value = newListener;
     this._pendingValue = noChange;
   }
 
   handleEvent(event: Event) {
-    const listener = (typeof this.value === 'function') ?
-        this.value :
-        (typeof this.value.handleEvent === 'function') ?
-        this.value.handleEvent :
-        () => null;
-    listener.call(this.eventContext || this.element, event);
+    if (typeof this.value === 'function') {
+      this.value.call(this.eventContext || this.element, event);
+    } else {
+      this.value.handleEvent(event);
+    }
   }
 }
 
