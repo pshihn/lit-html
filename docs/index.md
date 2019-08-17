@@ -30,8 +30,7 @@ let sayHello = (name) => html`<h1>Hello ${name}</h1>`;
 // It's rendered with the `render()` function:
 render(sayHello('World'), document.body);
 
-// And re-renders only update the data that changed, without
-// VDOM diffing!
+// And re-renders only update the data that changed, without VDOM diffing!
 render(sayHello('Everyone'), document.body);
 ```
 
@@ -66,14 +65,14 @@ lit-html gives you the full power of JavaScript and functional programming patte
 
 Templates are values that can be computed, passed to and from functions and nested. Expressions are real JavaScript and can include anything you need.
 
-lit-html support many kind of values natively: strings, DOM nodes, heterogeneous lists, nested templates and more.
+lit-html supports many kind of values natively: strings, DOM nodes, heterogeneous lists, nested templates and more.
 
 </div>
 <div style="flex: 1">
 
 ## Extensible
 
-lit-html is extremely customizable and extensible. Directives customize how values are handled, allowing for asynchronous values, efficient keyed-repeats, error boundaries, and more. lit-html is like your very own a template construction kit.
+lit-html is extremely customizable and extensible. Directives customize how values are handled, allowing for asynchronous values, efficient keyed-repeats, error boundaries, and more. lit-html is like your very own template construction kit.
 
 </div>
 </div>

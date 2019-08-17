@@ -17,8 +17,8 @@ import {Template} from '../lib/template.js';
 import {directive, NodePart, Part, reparentNodes, TemplateResult} from '../lit-html.js';
 
 type CachedTemplate = {
-  instance: TemplateInstance,
-  nodes: DocumentFragment
+  readonly instance: TemplateInstance,
+  readonly nodes: DocumentFragment
 };
 const templateCaches =
     new WeakMap<NodePart, WeakMap<Template, CachedTemplate>>();
@@ -37,7 +37,7 @@ const templateCaches =
  * `
  * ```
  */
-export const cache = directive((value: any) => (part: Part) => {
+export const cache = directive((value: unknown) => (part: Part) => {
   if (!(part instanceof NodePart)) {
     throw new Error('cache can only be used in text bindings');
   }

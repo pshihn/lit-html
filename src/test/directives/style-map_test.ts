@@ -16,12 +16,15 @@ import {StyleInfo, styleMap} from '../../directives/style-map.js';
 import {render} from '../../lib/render.js';
 import {html} from '../../lit-html.js';
 
+const assert = chai.assert;
+
+// tslint:disable:no-any OK in test code.
+
 const ua = window.navigator.userAgent;
 const isChrome41 = ua.indexOf('Chrome/41') > 0;
 const isIE = ua.indexOf('Trident/') > 0;
-const testIfSupportsCSSVariables = isIE || isChrome41 ? test.skip : test;
-
-const assert = chai.assert;
+const testIfSupportsCSSVariables = (test: any) =>
+    isIE || isChrome41 ? test.skip : test;
 
 suite('styleMap', () => {
   let container: HTMLDivElement;
@@ -76,7 +79,7 @@ suite('styleMap', () => {
     assert.equal(el.style.paddingBottom, '');
   });
 
-  testIfSupportsCSSVariables('adds and removes CSS variables', () => {
+  testIfSupportsCSSVariables(test)('adds and removes CSS variables', () => {
     renderStyleMap({'--size': '2px'});
     const el = container.firstElementChild as HTMLElement;
     assert.equal(el.style.getPropertyValue('--size'), '2px');

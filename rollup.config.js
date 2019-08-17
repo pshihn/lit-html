@@ -25,7 +25,9 @@ export default {
     terser({
       warnings: true,
       mangle: {
-        module: true,
+        properties: {
+          regex: /^__/,
+        },
       },
     }),
     filesize({

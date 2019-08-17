@@ -17,6 +17,8 @@ import {stripExpressionMarkers} from '../test-utils/strip-markers.js';
 
 const assert = chai.assert;
 
+// tslint:disable:no-any OK in test code.
+
 suite('Parts', () => {
   suite('AttributePart', () => {
     let element: HTMLElement;
@@ -39,6 +41,44 @@ suite('Parts', () => {
             part.setValue('bar');
             assert.equal(committer.dirty, false);
           });
+
+      test('does not iterate iterable primitives', () => {
+        (Number.prototype as any)[Symbol.iterator] = function() {
+          let i = -1;
+          const limit = this.valueOf();
+          return {
+            next() {
+              if (++i < limit) {
+                return {value: i, done: false};
+              }
+              return {done: true};
+            },
+          };
+        };
+
+        try {
+          part.setValue(3);
+          part.commit();
+          assert.equal(element.getAttribute('foo'), '3');
+        } finally {
+          delete (Number.prototype as any)[Symbol.iterator];
+        }
+      });
+
+      test('does not iterate string primitives', () => {
+        const iterator = String.prototype[Symbol.iterator];
+        String.prototype[Symbol.iterator] = function() {
+          throw new Error('FAIL');
+        };
+
+        try {
+          part.setValue('bar');
+          part.commit();
+          assert.equal(element.getAttribute('foo'), 'bar');
+        } finally {
+          String.prototype[Symbol.iterator] = iterator;
+        }
+      });
     });
   });
 
@@ -82,6 +122,53 @@ suite('Parts', () => {
         part.setValue(null);
         part.commit();
         assert.equal(stripExpressionMarkers(container.innerHTML), '');
+      });
+
+      test('accepts a symbol', () => {
+        const sym = Symbol();
+        part.setValue(sym);
+        part.commit();
+        assert.equal(stripExpressionMarkers(container.innerHTML), String(sym));
+      });
+
+      test('accepts a symbol with a description', () => {
+        const sym = Symbol('description!');
+        part.setValue(sym);
+        part.commit();
+        assert.equal(stripExpressionMarkers(container.innerHTML), String(sym));
+      });
+
+      test('accepts a symbol on subsequent renders', () => {
+        const sym1 = Symbol();
+        part.setValue(sym1);
+        part.commit();
+        assert.equal(stripExpressionMarkers(container.innerHTML), String(sym1));
+
+        // If the previously rendered value caused a single text node to be
+        // created, then subsequent renders will try to update the existing text
+        // node by setting `.data`. If the new value is a symbol and it isn't
+        // explicitly converted with `String`, then this would throw.
+        const sym2 = Symbol('description!');
+        part.setValue(sym2);
+        part.commit();
+        assert.equal(stripExpressionMarkers(container.innerHTML), String(sym2));
+      });
+
+      test('accepts an object', () => {
+        part.setValue({});
+        part.commit();
+        assert.equal(
+            stripExpressionMarkers(container.innerHTML), '[object Object]');
+      });
+
+      test('accepts an object with a `toString` method', () => {
+        part.setValue({
+          toString() {
+            return 'toString!';
+          }
+        });
+        part.commit();
+        assert.equal(stripExpressionMarkers(container.innerHTML), 'toString!');
       });
 
       test('accepts a function', () => {

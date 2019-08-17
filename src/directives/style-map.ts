@@ -15,22 +15,14 @@
 import {AttributePart, directive, Part, PropertyPart} from '../lit-html.js';
 
 export interface StyleInfo {
-  [name: string]: string;
+  readonly [name: string]: string;
 }
 
 /**
  * Stores the StyleInfo object applied to a given AttributePart.
  * Used to unset existing values when a new StyleInfo object is applied.
  */
-const styleMapCache = new WeakMap();
-
-/**
- * Stores AttributeParts that have had static styles applied (e.g. `height: 0;`
- * in style="height: 0; ${styleMap()}"). Static styles are applied only the
- * first time the directive is run on a part.
- */
-// Note, could be a WeakSet, but prefer not requiring this polyfill.
-const styleMapStatics = new WeakMap();
+const styleMapCache = new WeakMap<AttributePart, StyleInfo>();
 
 /**
  * A directive that applies CSS properties to an element.
@@ -57,19 +49,20 @@ export const styleMap = directive((styleInfo: StyleInfo) => (part: Part) => {
         'and must be the only part in the attribute.');
   }
 
+  const {committer} = part;
+  const {style} = committer.element as HTMLElement;
+
   // Handle static styles the first time we see a Part
-  if (!styleMapStatics.has(part)) {
-    (part.committer.element as HTMLElement).style.cssText =
-        part.committer.strings.join(' ');
-    styleMapStatics.set(part, true);
+  if (!styleMapCache.has(part)) {
+    style.cssText = committer.strings.join(' ');
   }
-  const style = (part.committer.element as HTMLElement).style;
 
   // Remove old properties that no longer exist in styleInfo
   const oldInfo = styleMapCache.get(part);
   for (const name in oldInfo) {
     if (!(name in styleInfo)) {
       if (name.indexOf('-') === -1) {
+        // tslint:disable-next-line:no-any
         (style as any)[name] = null;
       } else {
         style.removeProperty(name);
@@ -80,6 +73,7 @@ export const styleMap = directive((styleInfo: StyleInfo) => (part: Part) => {
   // Add or update properties
   for (const name in styleInfo) {
     if (name.indexOf('-') === -1) {
+      // tslint:disable-next-line:no-any
       (style as any)[name] = styleInfo[name];
     } else {
       style.setProperty(name, styleInfo[name]);

@@ -16,6 +16,50 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.2] - 2019-08-12
+
+### Fixed
+* Fixed a bug where bindings in comments could be written as text in some cases. ([#926](https://github.com/Polymer/lit-html/issues/926))
+
+## [1.1.1] - 2019-07-09
+
+### Changed
+* `render` and `shady-render` now both accept any value that is renderable by `NodePart`. ([#910](https://github.com/Polymer/lit-html/issues/910))
+
+## [1.1.0] - 2019-05-20
+
+### Changed
+* Many small performance enhancements.
+* Private names are now named with a `__` prefix  ([#859](https://github.com/Polymer/lit-html/issues/859)).
+
+### Added
+* Setup continuous benchmarking with Tachometer ([#887](https://github.com/Polymer/lit-html/issues/887)).
+
+### Fixed
+* Prevent empty styles from causing exceptions or breaking rendering when using `shady-render` ([#760](https://github.com/Polymer/lit-html/issues/760)).
+* Primitive values in attributes are now always simply stringified, regardless of whether they are iterable. ([#830](https://github.com/Polymer/lit-html/pull/830))
+* Adopt and upgrade template fragments after processing for parts ([#831](https://github.com/Polymer/lit-html/issues/831)).
+* Fixed bindings with attribute-like expressions preceeding them ([#855](https://github.com/Polymer/lit-html/issues/855)).
+* Fixed errors with bindings in HTML comments ([#882](https://github.com/Polymer/lit-html/issues/882)).
+
+## [1.0.0] - 2019-02-05
+### Changed
+* Tons of docs updates ([#746](https://github.com/Polymer/lit-html/pull/746)), ([#675](https://github.com/Polymer/lit-html/pull/675)), ([#724](https://github.com/Polymer/lit-html/pull/724)), ([#753](https://github.com/Polymer/lit-html/pull/753)), ([#764](https://github.com/Polymer/lit-html/pull/764)), ([#763](https://github.com/Polymer/lit-html/pull/763)), ([#765](https://github.com/Polymer/lit-html/pull/765)), ([#767](https://github.com/Polymer/lit-html/pull/767)), ([#768](https://github.com/Polymer/lit-html/pull/768)), ([#734](https://github.com/Polymer/lit-html/pull/734)), ([#771](https://github.com/Polymer/lit-html/pull/771)), ([#766](https://github.com/Polymer/lit-html/pull/766)), ([#773](https://github.com/Polymer/lit-html/pull/773)), ([#770](https://github.com/Polymer/lit-html/pull/770)), ([#769](https://github.com/Polymer/lit-html/pull/769)), ([#777](https://github.com/Polymer/lit-html/pull/777)), ([#776](https://github.com/Polymer/lit-html/pull/776)), ([#754](https://github.com/Polymer/lit-html/pull/754)), ([#779](https://github.com/Polymer/lit-html/pull/779))
+### Added
+* Global version of `lit-html` on window ([#790](https://github.com/Polymer/lit-html/pull/790)).
+### Fixed
+* Removed use of `any` outside of test code ([#741](https://github.com/Polymer/lit-html/pull/741)).
+
+## [1.0.0-rc.2] - 2019-01-09
+### Changed
+* Performance improvements to template processing. ([#690](https://github.com/Polymer/lit-html/pull/690))
+### Added
+* Added the `nothing` sentinel value which can be used to clear a part. ([#673](https://github.com/Polymer/lit-html/pull/673))
+### Fixed
+* Fixed #702: a bug with the `unsafeHTML` directive when changing between unsafe and other values. ([#703](https://github.com/Polymer/lit-html/pull/703))
+* Fixed #708: a bug with the `until` directive where placeholders could overwrite resolved Promises. ([#721](https://github.com/Polymer/lit-html/pull/721))
+
+
 ## [1.0.0-rc.1] - 2018-12-13
 ### Fixed
 * Documentation updates.
@@ -29,7 +73,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 * Added `cache()` directive. ([#646](https://github.com/Polymer/lit-html/pull/646))
 * Removed Promise as a supposed node-position value type. ([#555](https://github.com/Polymer/lit-html/pull/555))
-* Added a minimal `<template>` polyfill. 
+* Added a minimal `<template>` polyfill.
 ### Removed
 * [Breaking] Removed the `when()` directive.  Users may achieve similar behavior by wrapping a ternary with the `cache()` directive.
 ### Fixed

@@ -2,7 +2,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Google Sans', 'Roboto', 'Noto', sans-serif;
+  font-family: 'Roboto', 'Noto', sans-serif;
   -webkit-font-smoothing: antialiased;
   color: #222222;
   font-size: 16px;
@@ -11,6 +11,13 @@ body {
 
 a {
   text-decoration: none;
+}
+
+:target::before {
+  content: "";
+  display: block;
+  height: 60px;
+  margin-top: -60px;
 }
 
 h1 {
@@ -72,6 +79,10 @@ code {
   padding: 2px 4px;
 }
 
+a code {
+  color: inherit;
+}
+
 pre code {
   padding: 0;
 }
@@ -83,26 +94,6 @@ pre {
   overflow-x: auto;
   max-width: 720px;
   box-sizing: border-box;
-}
-
-/* Logo lockup */
-#logo-lockup {
-  white-space: nowrap;
-  margin-bottom: -30px;
-}
-#logo-lockup::before {
-  width: 64px;
-  height: 44px;
-  background-image: url(../images/logos/p-logo.svg);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-  display: inline-block;
-  margin-right: 20px;
-  content: '';
-}
-#logo-lockup::after {
-  display: none;
 }
 
 
@@ -148,6 +139,11 @@ time {
   color: inherit;
 }
 
+/* Override TypeDoc theme underline on hover. */
+.main-nav a:hover {
+  text-decoration: none;
+}
+
 .main-nav .nav-title {
   font-size: 18px;
 }
@@ -158,15 +154,39 @@ time {
 
 .main-nav .nav-item {
   font-size: 14px;
-  padding: 0 12px;
+  padding: 18px 12px;
+  align-self: stretch;
 }
 
-.main-nav .icon-github {
-  margin-right: 20px;
-  margin-left: 12px;
+.main-nav .icon {
+  padding: 0 12px;
   width: 24px;
   height: 24px;
   background-size: cover;
+}
+
+.main-nav .search-box {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px;
+  font-size: 16px;
+  border: none;
+  box-sizing: border-box;
+  -webkit-transform: translate3d(0, -100%, 0);
+  transform: translate3d(0, -100%, 0);
+  -webkit-appearance: none;
+}
+
+.main-nav .search-box:focus {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  transition: -webkit-transform 0.2s;
+  transition: transform 0.2s;
 }
 
 /* Content area */
@@ -174,6 +194,7 @@ main {
   margin-top: 60px;
   display: flex;
   align-items: flex-start;
+  justify-content: center;
 }
 
 .wrapper {
@@ -182,7 +203,7 @@ main {
 
 /* Landing page */
 .hero .main-nav {
-  position: static;
+  position: relative;
   background: none;
   box-shadow: none;
 }
@@ -344,6 +365,10 @@ section p {
   line-height: 22px;
 }
 
+.side-nav li:not(.active) > a {
+  color: #222;
+}
+
 /* Article area */
 article {
   flex: 1;
@@ -365,12 +390,6 @@ article h2 {
 article h3,
 article h4 {
   margin: 32px 0 8px 0;
-}
-
-article table,
-article p,
-article li {
-  font-family: 'Roboto', 'Noto', sans-serif;
 }
 
 article p {
@@ -398,7 +417,6 @@ article ol li {
 
 .alert {
   position: relative;
-  z-index: -1;
   margin: 24px 0;
   padding: 1px 20px 1px 56px;
   box-shadow: 0 0 2px #ccc;
@@ -556,6 +574,10 @@ th, td {
   }
 }
 @media screen and (max-width: 640px) {
+  :target::before {
+    height: 112px;
+    margin-top: -112px;
+  }
 
   h1 {
     font-size: 32px;
@@ -573,6 +595,10 @@ th, td {
   .main-nav {
     height: 56px;
     padding-left: 20px;
+  }
+  
+  .main-nav .nav-item {
+    padding: 16px 12px;
   }
 
   main {
@@ -602,14 +628,6 @@ th, td {
 
   .responsive-row {
     flex-direction: column;
-  }
-  #logo-lockup {
-    margin-bottom: -20px;
-  }
-  #logo-lockup::before {
-    margin-right: 12px;
-    width: 38px;
-    height: 26px;
   }
 
   #section-features h2 {

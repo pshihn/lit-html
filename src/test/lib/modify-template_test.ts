@@ -19,6 +19,8 @@ import {stripExpressionMarkers} from '../test-utils/strip-markers.js';
 
 const assert = chai.assert;
 
+// tslint:disable:no-any OK in test code.
+
 suite('add/remove nodes from template', () => {
   let container: HTMLElement;
 
@@ -72,7 +74,7 @@ suite('add/remove nodes from template', () => {
     const template = templateFactory(result);
     const fragment1 = document.createDocumentFragment();
     fragment1.appendChild(document.createElement('div'));
-    (fragment1.firstChild as HTMLElement)!.innerHTML = '<span>1</span>';
+    (fragment1.firstChild as HTMLElement).innerHTML = '<span>1</span>';
     insertNodeIntoTemplate(
         template, fragment1, template.element.content.firstChild);
     const fragment2 = document.createDocumentFragment();
@@ -98,7 +100,7 @@ suite('add/remove nodes from template', () => {
         </div><div name="remove"><span name="remove"><span name="remove">remove</span></span></div>`;
         const result = getResult('bar', 'baz', 'qux');
         const template = templateFactory(result);
-        const nodeSet = new Set();
+        const nodeSet = new Set<Node>();
         const nodesToRemove =
             template.element.content.querySelectorAll('[name="remove"]');
         for (const node of Array.from(nodesToRemove)) {
@@ -130,7 +132,7 @@ suite('add/remove nodes from template', () => {
         </div><div name="remove"><span name="remove"><span name="remove">remove</span></span></div>`;
         const result = getResult('bar', 'baz', 'qux', 'r1', 'r2', 'r3');
         const template = templateFactory(result);
-        const nodeSet = new Set();
+        const nodeSet = new Set<Node>();
         const nodesToRemove =
             template.element.content.querySelectorAll('[name="remove"]');
         for (const node of Array.from(nodesToRemove)) {
@@ -165,7 +167,7 @@ suite('add/remove nodes from template', () => {
         let node;
         while (node =
                    template.element.content.querySelector('[name="remove"]')) {
-          const nodeSet = new Set();
+          const nodeSet = new Set<Node>();
           nodeSet.add(node);
           removeNodesFromTemplate(template, nodeSet);
         }

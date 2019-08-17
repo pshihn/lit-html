@@ -5,6 +5,10 @@ interface ShadyCSS {
   prepareTemplateDom(template: Element, elementName: string): void;
   prepareTemplateStyles(
       template: Element, elementName: string, typeExtension?: string): void;
+  ScopingShim: undefined|{
+    prepareAdoptedCssText(
+        cssTextArray: Array<string>, elementName: string): void;
+  };
 }
 
 interface ShadyDOM {
@@ -15,9 +19,3 @@ interface Window {
   ShadyCSS?: ShadyCSS;
   ShadyDOM?: ShadyDOM;
 }
-
-/** Allows code to check `instanceof ShadowRoot`. */
-declare interface ShadowRootConstructor {
-  new(): ShadowRoot;
-}
-declare const ShadowRoot: ShadowRootConstructor;

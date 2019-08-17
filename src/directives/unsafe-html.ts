@@ -16,8 +16,8 @@ import {isPrimitive} from '../lib/parts.js';
 import {directive, NodePart, Part} from '../lit-html.js';
 
 interface PreviousValue {
-  value: any;
-  fragment: DocumentFragment;
+  readonly value: unknown;
+  readonly fragment: DocumentFragment;
 }
 
 // For each part, remember the value that was last rendered to the part by the
@@ -34,7 +34,7 @@ const previousValues = new WeakMap<NodePart, PreviousValue>();
  * sanitized or escaped, as it may lead to cross-site-scripting
  * vulnerabilities.
  */
-export const unsafeHTML = directive((value: any) => (part: Part): void => {
+export const unsafeHTML = directive((value: unknown) => (part: Part): void => {
   if (!(part instanceof NodePart)) {
     throw new Error('unsafeHTML can only be used in text bindings');
   }
@@ -47,7 +47,7 @@ export const unsafeHTML = directive((value: any) => (part: Part): void => {
   }
 
   const template = document.createElement('template');
-  template.innerHTML = value;
+  template.innerHTML = value as string;  // innerHTML casts to string internally
   const fragment = document.importNode(template.content, true);
   part.setValue(fragment);
   previousValues.set(part, {value, fragment});

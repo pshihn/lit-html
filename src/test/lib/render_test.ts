@@ -17,22 +17,29 @@ import {stripExpressionMarkers} from '../test-utils/strip-markers.js';
 
 const assert = chai.assert;
 
+// tslint:disable:no-any OK in test code.
+
 const isTemplatePolyfilled =
     ((HTMLTemplateElement as any).decorate != null ||
      (window as any).ShadyDOM && (window as any).ShadyDOM.inUse);
-const testSkipForTemplatePolyfill = isTemplatePolyfilled ? test.skip : test;
+const testSkipForTemplatePolyfill = (test: any) =>
+    isTemplatePolyfilled ? test.skip : test;
 
 const isSafari10_0 =
-    (window.navigator.userAgent.indexOf('AppleWebKit/602') === -1);
-const testSkipSafari10_0 = isSafari10_0 ? test : test.skip;
+    (window.navigator.userAgent.indexOf('AppleWebKit/602') !== -1);
+const testSkipSafari10_0 = (test: any) => isSafari10_0 ? test.skip : test;
 
-const isChrome41 = (window.navigator.userAgent.indexOf('Chrome/41') === -1);
-const testSkipChrome41 = isChrome41 ? test : test.skip;
+const isChrome41 = (window.navigator.userAgent.indexOf('Chrome/41') !== -1);
+const testSkipChrome41 = (test: any) => isChrome41 ? test.skip : test;
 
-const testIfHasSymbol = (window as any).Symbol === undefined ? test.skip : test;
+const testIfHasSymbol = (test: any) =>
+    (window as any).Symbol === undefined ? test.skip : test;
 
 const ua = window.navigator.userAgent;
 const isIe = ua.indexOf('Trident/') > 0;
+
+const suiteIfCustomElementsAreSupported = (suite: any) =>
+    (window.customElements != null) ? suite : suite.skip;
 
 suite('render()', () => {
   let container: HTMLElement;
@@ -86,7 +93,7 @@ suite('render()', () => {
           children.filter((node) => node.nodeType !== Node.COMMENT_NODE));
     });
 
-    testIfHasSymbol('renders a Symbol', () => {
+    testIfHasSymbol(test)('renders a Symbol', () => {
       render(html`<div>${Symbol('A')}</div>`, container);
       assert.include(
           container.querySelector('div')!.textContent!.toLowerCase(), 'symbol');
@@ -116,6 +123,13 @@ suite('render()', () => {
       render(html`<div>${'foo'} </div>`, container);
       assert.equal(
           stripExpressionMarkers(container.innerHTML), '<div>foo </div>');
+    });
+
+    test('renders parts that look like attributes', () => {
+      render(html`<div>foo bar=${'baz'}</div>`, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<div>foo bar=baz</div>');
     });
 
     test('renders multiple parts per element, preserving whitespace', () => {
@@ -245,10 +259,33 @@ suite('render()', () => {
 
     test('renders comments with bindings', () => {
       const t = html`
+        <!-- ${'foo'} -->
+        <p>${'bar'}</p>`;
+      render(t, container);
+      assert.equal(container.querySelector('p')!.textContent, 'bar');
+      assert.equal(container.textContent!.trim(), 'bar');
+    });
+
+    test('renders comments with bindings', () => {
+      const t = html`<!--${'foo'}-->`;
+      render(t, container);
+      assert.equal(container.textContent, '');
+    });
+
+    test('renders comments with attribute-like bindings', () => {
+      const t = html`
         <!-- <div class="${'foo'}"></div> -->
         <p>${'bar'}</p>`;
       render(t, container);
       assert.equal(container.querySelector('p')!.textContent, 'bar');
+    });
+
+    test('renders comments with bindings followed by attr', () => {
+      const t = html`
+        <!-- ${'foo'} -->
+        <p bar=${'baz'}></p>`;
+      render(t, container);
+      assert.equal(container.querySelector('p')!.getAttribute('bar'), 'baz');
     });
 
     test('renders comments with multiple bindings', () => {
@@ -257,6 +294,67 @@ suite('render()', () => {
         <p>${'baz'}</p>`;
       render(t, container);
       assert.equal(container.querySelector('p')!.textContent, 'baz');
+    });
+
+    test('handles comments with bindings', () => {
+      const t = html`<p>A<!-- ${'B'} ${'C'} -->D</p>`;
+      render(t, container);
+      // Use innerText instead of textContent because of a crazy bug in
+      // Chrome 41 where textContent would include the textContent of comments!
+      assert.equal(container.querySelector('p')!.innerText, 'AD');
+    });
+
+    test('handles elements in comments with attribute bindings', () => {
+      const t = html`A<!-- <div foo=${'bar'}>B</div>${'baz'} -->C`;
+      render(t, container);
+      // Use innerText instead of textContent because of a crazy bug in
+      // Chrome 41 where textContent would include the textContent of comments!
+      assert.equal(container.innerText, 'AC');
+    });
+
+    test('handles attribute bindings with comment-like values', () => {
+      const t = html`A<div foo="<!--${'bar'}">B</div>C`;
+      render(t, container);
+      assert.equal(container.textContent, 'ABC');
+    });
+
+    test('handles comments with attribute-like content', () => {
+      const t = html`A<!-- foo=${'bar'}-->B`;
+      render(t, container);
+      // Use innerText instead of textContent because of a crazy bug in
+      // Chrome 41 where textContent would include the textContent of
+      // comments!
+      assert.equal(container.innerText, 'AB');
+    });
+
+    test('handles elements in comments with node bindings', () => {
+      const t = html`A<!-- <div>${'B'}</div>${'baz'} -->C`;
+      render(t, container);
+      // Use innerText instead of textContent because of a crazy bug in
+      // Chrome 41 where textContent would include the textContent of comments!
+      assert.equal(container.innerText, 'AC');
+    });
+
+    test('renders comments with multiple bindings followed by attr', () => {
+      const t = html`
+        <!-- ${'foo'} ${'bar'} -->
+        <p baz=${'qux'}></p>`;
+      render(t, container);
+      assert.equal(container.querySelector('p')!.getAttribute('baz'), 'qux');
+    });
+
+    test('does not break with an attempted dynamic start tag', () => {
+      // this won't work, but we'd like it to not throw an exception or break
+      // other bindings
+      render(html`<${'div'}></div><p>${'foo'}</p>`, container);
+      assert.equal(container.querySelector('p')!.textContent, 'foo');
+    });
+
+    test('does not break with an attempted dynamic end tag', () => {
+      // this won't work, but we'd like it to not throw an exception or break
+      // other bindings
+      render(html`<div></${'div'}><p>${'foo'}</p>`, container);
+      assert.equal(container.querySelector('p')!.textContent, 'foo');
     });
 
     test('renders legacy marker sequences in text nodes', () => {
@@ -289,14 +387,15 @@ suite('render()', () => {
           stripExpressionMarkers(container.innerHTML), '<div foo="bar"></div>');
     });
 
-    testIfHasSymbol('renders a Symbol to an attribute', () => {
+    testIfHasSymbol(test)('renders a Symbol to an attribute', () => {
       render(html`<div foo=${Symbol('A')}></div>`, container);
       assert.include(
           container.querySelector('div')!.getAttribute('foo')!.toLowerCase(),
           'symbol');
     });
 
-    testIfHasSymbol('renders a Symbol in an array to an attribute', () => {
+    testIfHasSymbol(
+        test)('renders a Symbol in an array to an attribute', () => {
       render(html`<div foo=${[Symbol('A')]}></div>`, container);
       assert.include(
           container.querySelector('div')!.getAttribute('foo')!.toLowerCase(),
@@ -416,7 +515,8 @@ suite('render()', () => {
           container);
       assert.oneOf(stripExpressionMarkers(container.innerHTML), [
         '<div foo="Foo" bar="Bar" baz="Baz"></div>',
-        '<div foo="Foo" baz="Baz" bar="Bar"></div>'
+        '<div foo="Foo" baz="Baz" bar="Bar"></div>',
+        '<div bar="Bar" foo="Foo" baz="Baz"></div>'
       ]);
     });
 
@@ -525,7 +625,7 @@ suite('render()', () => {
 
     test('adds event listener functions, calls with right this value', () => {
       let thisValue;
-      let event: Event;
+      let event: Event|undefined = undefined;
       const listener = function(this: any, e: any) {
         event = e;
         thisValue = this;
@@ -534,14 +634,17 @@ suite('render()', () => {
       render(html`<div @click=${listener}></div>`, container, {eventContext});
       const div = container.querySelector('div')!;
       div.click();
+      if (event === undefined) {
+        throw new Error(`Event listener never fired!`);
+      }
       assert.equal(thisValue, eventContext);
 
       // MouseEvent is not a function in IE, so the event cannot be an instance
       // of it
       if (typeof MouseEvent === 'function') {
-        assert.instanceOf(event!, MouseEvent);
+        assert.instanceOf(event, MouseEvent);
       } else {
-        assert.isDefined((event! as MouseEvent).initMouseEvent);
+        assert.isDefined((event as MouseEvent).initMouseEvent);
       }
     });
 
@@ -703,7 +806,7 @@ suite('render()', () => {
       assert.strictEqual((container.firstElementChild as any).foo, 1234);
     });
 
-    testSkipChrome41(
+    testSkipChrome41(test)(
         'event listeners can see events fired by dynamic children', () => {
           // This tests that node directives are called in the commit phase, not
           // the setValue phase
@@ -750,43 +853,43 @@ suite('render()', () => {
 
   suite('<table>', () => {
     testSkipForTemplatePolyfill(
-        'renders nested templates within table content', () => {
-          let table = html`<table>${html`<tr>${html`<td></td>`}</tr>`}</table>`;
-          render(table, container);
-          assert.equal(
-              stripExpressionMarkers(container.innerHTML),
-              '<table><tr><td></td></tr></table>');
+        test)('renders nested templates within table content', () => {
+      let table = html`<table>${html`<tr>${html`<td></td>`}</tr>`}</table>`;
+      render(table, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<table><tr><td></td></tr></table>');
 
-          table = html`<tbody>${html`<tr></tr>`}</tbody>`;
-          render(table, container);
-          assert.equal(
-              stripExpressionMarkers(container.innerHTML),
-              '<tbody><tr></tr></tbody>');
+      table = html`<tbody>${html`<tr></tr>`}</tbody>`;
+      render(table, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<tbody><tr></tr></tbody>');
 
-          table = html`<table><tr></tr>${html`<tr></tr>`}</table>`;
-          render(table, container);
-          assert.equal(
-              stripExpressionMarkers(container.innerHTML),
-              '<table><tbody><tr></tr><tr></tr></tbody></table>');
+      table = html`<table><tr></tr>${html`<tr></tr>`}</table>`;
+      render(table, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<table><tbody><tr></tr><tr></tr></tbody></table>');
 
-          table = html`<table><tr><td></td>${html`<td></td>`}</tr></table>`;
-          render(table, container);
-          assert.equal(
-              stripExpressionMarkers(container.innerHTML),
-              '<table><tbody><tr><td></td><td></td></tr></tbody></table>');
+      table = html`<table><tr><td></td>${html`<td></td>`}</tr></table>`;
+      render(table, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<table><tbody><tr><td></td><td></td></tr></tbody></table>');
 
-          table = html`<table><tr><td></td>${html`<td></td>`}${
-              html`<td></td>`}</tr></table>`;
-          render(table, container);
-          assert.equal(
-              stripExpressionMarkers(container.innerHTML),
-              '<table><tbody><tr><td></td><td></td><td></td></tr></tbody></table>');
-        });
+      table = html`<table><tr><td></td>${html`<td></td>`}${
+          html`<td></td>`}</tr></table>`;
+      render(table, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<table><tbody><tr><td></td><td></td><td></td></tr></tbody></table>');
+    });
 
     // On Safari 10.0 (but not 10.1), the attribute value "<table>" is
     // escaped to "&lt;table&gt;". That shouldn't cause this test to
     // fail, so we skip
-    testSkipSafari10_0(
+    testSkipSafari10_0(test)(
         'renders quoted attributes with "<table>" before an expression', () => {
           const template = html`<div a="<table>${'foo'}"></div>`;
           render(template, container);
@@ -923,10 +1026,7 @@ suite('render()', () => {
     });
   });
 
-  const suiteIfCustomElementsAreSupported =
-      (window.customElements != null) ? suite : suite.skip;
-
-  suiteIfCustomElementsAreSupported('custom elements', () => {
+  suiteIfCustomElementsAreSupported(suite)('custom elements', () => {
     class PropertySetterElement extends HTMLElement {
       public readonly calledSetter = false;
       private _value?: string = undefined;
@@ -941,6 +1041,15 @@ suite('render()', () => {
       }
     }
     customElements.define('property-tester', PropertySetterElement);
+
+    class MutatesInConstructorElement extends HTMLElement {
+      constructor() {
+        super();
+        this.appendChild(document.createElement('div'));
+      }
+    }
+    customElements.define(
+        'mutates-in-constructor', MutatesInConstructorElement);
 
     teardown(() => {
       if (container.parentElement === document.body) {
@@ -1008,6 +1117,19 @@ suite('render()', () => {
           const instance = container.firstElementChild as PropertySetterElement;
           assert.equal(instance.value, 'foo');
           assert.isTrue(instance.calledSetter);
+        });
+
+    // We need Safari to implement customElements.upgrade before we can enable
+    // this.
+    test.skip(
+        'does not upgrade elements until after parts are established', () => {
+          render(
+              html`
+            <mutates-in-constructor></mutates-in-constructor>
+            <span>${'test'}</span>
+      `,
+              container);
+          assert.equal(container.querySelector('span')!.textContent, 'test');
         });
   });
 
@@ -1079,7 +1201,7 @@ suite('render()', () => {
       // Wait for mutation callback to be called
       await new Promise((resolve) => setTimeout(resolve));
 
-      const elementNodes: Array<Node> = [];
+      const elementNodes: Node[] = [];
       for (const record of mutationRecords) {
         elementNodes.push(...Array.from(record.addedNodes)
                               .filter((n) => n.nodeType === Node.ELEMENT_NODE));
@@ -1292,6 +1414,54 @@ suite('render()', () => {
       const container =
           importToContainer(templateFactory(result).element.content);
       assert(container.innerHTML, '<div></div>');
+    });
+  });
+
+  // `render` directly passes the given value to `NodePart#setValue`, so these
+  // tests are really just a sanity check that they are accepted by `render`.
+  // Tests about rendering behavior for specific values should generally be
+  // grouped with those of `NodePart#setValue` and `#commit`.
+  suite('accepts types other than TemplateResult', () => {
+    test('accepts undefined', () => {
+      render(undefined, container);
+      assert.equal(stripExpressionMarkers(container.innerHTML), '');
+    });
+
+    test('accepts a string', () => {
+      render('test', container);
+      assert.equal(stripExpressionMarkers(container.innerHTML), 'test');
+    });
+
+    test('accepts an object', () => {
+      render({}, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML), '[object Object]');
+    });
+
+    test('accepts an object with `toString`', () => {
+      render(
+          {
+            toString() {
+              return 'toString!';
+            }
+          },
+          container);
+      assert.equal(stripExpressionMarkers(container.innerHTML), 'toString!');
+    });
+
+    test('accepts an symbol', () => {
+      const sym = Symbol('description!');
+      render(sym, container);
+      assert.equal(stripExpressionMarkers(container.innerHTML), String(sym));
+    });
+
+    test('accepts a node', () => {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode('text in the div'));
+      render(div, container);
+      assert.equal(
+          stripExpressionMarkers(container.innerHTML),
+          '<div>text in the div</div>');
     });
   });
 });

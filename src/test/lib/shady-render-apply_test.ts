@@ -19,6 +19,11 @@ import {renderShadowRoot} from '../test-utils/shadow-root.js';
 
 const assert = chai.assert;
 
+// tslint:disable:no-any OK in test code.
+
+const testIfUsingNativeCSSVariables = (test: any) =>
+    (window.ShadyCSS && !window.ShadyCSS.nativeCss ? test.skip : test);
+
 suite('shady-render @apply', () => {
   test('styles with css custom properties using @apply render', function() {
     const container = document.createElement('scope-5');
@@ -37,6 +42,31 @@ suite('shady-render @apply', () => {
       </style>
       <div>Testing...</div>
     `;
+    renderShadowRoot(result, container);
+    const div = (container.shadowRoot!).querySelector('div');
+    const computedStyle = getComputedStyle(div!);
+    assert.equal(
+        computedStyle.getPropertyValue('border-top-width').trim(), '3px');
+    assert.equal(computedStyle.getPropertyValue('padding-top').trim(), '4px');
+    document.body.removeChild(container);
+  });
+
+  test('styles with mixins that are not in a TemplateInstance', function() {
+    const container = document.createElement('scope-6');
+    document.body.appendChild(container);
+    const style = document.createElement('style');
+    style.innerHTML = `
+      :host {
+        --batch: {
+          border: 3px solid orange;
+          padding: 4px;
+        };
+      }
+      div {
+        @apply --batch;
+      }
+    `;
+    const result = [style, htmlWithApply`<div>Testing...</div>`];
     renderShadowRoot(result, container);
     const div = (container.shadowRoot!).querySelector('div');
     const computedStyle = getComputedStyle(div!);
@@ -97,13 +127,13 @@ suite('shady-render @apply', () => {
           document.body.appendChild(applyProducer);
           renderShadowRoot(producerContent, applyProducer);
           const usersInProducer =
-              applyProducer.shadowRoot!.querySelectorAll('apply-user')!;
+              applyProducer.shadowRoot!.querySelectorAll('apply-user');
           renderShadowRoot(applyUserContent, usersInProducer[0]);
           renderShadowRoot(applyUserContent, usersInProducer[1]);
           const userInProducerStyle1 = getComputedStyle(
-              usersInProducer[0]!.shadowRoot!.querySelector('div')!);
+              usersInProducer[0].shadowRoot!.querySelector('div')!);
           const userInProducerStyle2 = getComputedStyle(
-              usersInProducer[1]!.shadowRoot!.querySelector('div')!);
+              usersInProducer[1].shadowRoot!.querySelector('div')!);
           assert.equal(
               userInProducerStyle1.getPropertyValue('border-top-width').trim(),
               '10px');
@@ -127,9 +157,7 @@ suite('shady-render @apply', () => {
 
   // TODO(sorvell): remove skip when this ShadyCSS PR is merged:
   // https://github.com/webcomponents/shadycss/pull/227.
-  const testOrSkip =
-      (window.ShadyCSS && !window.ShadyCSS.nativeCss ? test.skip : test);
-  testOrSkip(
+  testIfUsingNativeCSSVariables(test)(
       '@apply styles flow to custom elements that render in connectedCallback',
       () => {
         class E extends HTMLElement {
@@ -173,11 +201,11 @@ suite('shady-render @apply', () => {
         const user1 =
             applyProducer.shadowRoot!.querySelector('apply-user-ce1')!;
         const userInProducerStyle1 =
-            getComputedStyle(user1!.shadowRoot!.querySelector('div')!);
+            getComputedStyle(user1.shadowRoot!.querySelector('div')!);
         const user2 =
             applyProducer.shadowRoot!.querySelector('apply-user-ce2')!;
         const userInProducerStyle2 =
-            getComputedStyle(user2!.shadowRoot!.querySelector('div')!);
+            getComputedStyle(user2.shadowRoot!.querySelector('div')!);
         assert.equal(
             userInProducerStyle1.getPropertyValue('border-top-width').trim(),
             '10px');
